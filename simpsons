@@ -1,0 +1,124 @@
+#!/bin/sh
+
+data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/simpsons"
+quotes="$data_dir/quotes.json"
+url="https://raw.githubusercontent.com/erabug/simpsons-quotes/master/quotes.json"
+
+usage() {
+    printf '%s\n' "Usage: simpsons [--update]"
+}
+
+case "${1:-}" in
+    "") ;;
+    --update) ;;
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac
+
+if ! command -v curl >/dev/null 2>&1; then
+    printf '%s\n' "simpsons: curl is required" >&2
+    exit 1
+fi
+
+if ! command -v ruby >/dev/null 2>&1; then
+    printf '%s\n' "simpsons: Ruby is required" >&2
+    exit 1
+fi
+
+if [ ! -s "$quotes" ] || [ "${1:-}" = "--update" ]; then
+    mkdir -p "$data_dir"
+    temporary_file="${quotes}.tmp.$$"
+
+    if curl -fsSL "$url" -o "$temporary_file"; then
+        mv "$temporary_file" "$quotes"
+    else
+        rm -f "$temporary_file"
+        printf '%s\n' "simpsons: unable to download the quote database" >&2
+        exit 1
+    fi
+fi
+
+ruby -rjson -rio/console -e '
+quotes = JSON.parse(File.read(ARGV[0]))
+
+quote = quotes.select { |q|
+  q["quote"].is_a?(String) && q["speaker"].is_a?(String)
+}.sample
+
+abort "simpsons: no usable quotes found" unless quote
+
+indent = "    "
+yellow = "\e[38;5;11m"
+reset = "\e[0m"
+
+columns = IO.console&.winsize&.last || 80
+width = [columns - indent.length, 20].max
+
+def wrap_words(words, width)
+  lines = [[]]
+  length = 0
+
+  words.each do |word, coloured|
+    extra = word.length + (lines.last.empty? ? 0 : 1)
+
+    if !lines.last.empty? && length + extra > width
+      lines << []
+      length = 0
+    end
+
+    length += word.length + (lines.last.empty? ? 0 : 1)
+    lines.last << [word, coloured]
+  end
+
+  lines
+end
+
+def print_lines(lines, indent, yellow, reset)
+  lines.each do |line|
+    output = +""
+    active_colour = false
+
+    line.each_with_index do |(word, coloured), index|
+      output << " " unless index.zero?
+
+      if coloured != active_colour
+        output << (coloured ? yellow : reset)
+        active_colour = coloured
+      end
+
+      output << word
+    end
+
+    output << reset if active_colour
+    puts indent + output
+  end
+end
+
+quote_words = "\"#{quote["quote"]}\"".gsub(/\s+/, " ").split.map { |word| [word, true] }
+speaker_words = "~ #{quote["speaker"]}".gsub(/\s+/, " ").split.map { |word| [word, false] }
+
+print_lines(
+  wrap_words(quote_words + speaker_words, width),
+  indent,
+  yellow,
+  reset
+)
+
+puts
+
+source = "From #{quote["season"]} - \"#{quote["episode"]}\""
+source_words = source.split.map { |word| [word, false] }
+
+print_lines(
+  wrap_words(source_words, width),
+  indent,
+  yellow,
+  reset
+)
+' "$quotes"
