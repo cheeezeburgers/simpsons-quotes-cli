@@ -27,39 +27,14 @@ Both are included with macOS.
 ## Installation
 
 ```sh
-git clone https://github.com/YOUR-USERNAME/simpsons-cli.git
-cd simpsons-cli
-sh install.sh
+chmod +x install.sh
+./install.sh
 ```
 
 The command is installed as `~/.local/bin/simpsons`.
 
-If `~/.local/bin` is not already in your `PATH`, add the appropriate line below
-and open a new Terminal window.
-
-### Zsh
-
-Add to `~/.zshrc`:
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-### Bash
-
-Add to `~/.bashrc`, or `~/.bash_profile` for a macOS login shell:
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-### Fish
-
-Run once:
-
-```fish
-fish_add_path ~/.local/bin
-```
+If `~/.local/bin` is not already in your `PATH`, the installer will show
+instructions for adding it.
 
 ## Usage
 
