@@ -1,7 +1,10 @@
 # Simpsons CLI Quotes
 
-I wanted a Simpsons-specific quote whenever I open a fresh shell, instead of a
-classic quote or `fortune`.
+Shows a Simpsons quote, D'oh! 🍩
+
+![simpsons-cli-hero-img](assets/simpsons-cli-hero-img.png)
+
+I wanted a Simpsons-specific quote whenever I open a fresh shell, instead of a classic quote or `fortune`.
 
 ## What it does
 
